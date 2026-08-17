@@ -1,0 +1,94 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        ===== PixelTheme — Color Foundation (STEP 5) =====
+        Đây là nguồn màu DUY NHẤT cho theme "Pixel". Toàn bộ XAML dùng theme này phải
+        reference brush qua {DynamicResource ...}, không hard-code mã màu (#RRGGBB) trực
+        tiếp trong control.
+
+        Định hướng: dark, premium, indie-game, pixel-art, high-contrast, dễ đọc.
+        Không neon quá mức, không gradient mềm, không glassmorphism.
+
+        STEP 5 chỉ định nghĩa màu - KHÔNG áp dụng pixel-border/pixel-corner ở file này.
+        Việc áp style pixel-border/corner cho từng control sẽ do STEP 7 (PixelStyles) đảm nhận,
+        dựa trên các brush khai báo tại đây.
+
+        DarkTheme.xaml và PinkTheme.xaml được giữ nguyên, không bị xoá hay chỉnh sửa - để sau
+        này người dùng có thể chọn giữa Pixel / Dark / Pink (xem STEP 10 - SettingsService).
+    -->
+
+    <!-- Nền chính của cửa sổ -->
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#14171C"/>
+
+    <!-- Nền các panel/card chính (curve card, filter editor, preset panel...) -->
+    <SolidColorBrush x:Key="PanelBrush" Color="#1D2128"/>
+
+    <!-- Nền phụ: hàng list, ô input, khối lồng bên trong panel chính -->
+    <SolidColorBrush x:Key="PanelSecondaryBrush" Color="#262B33"/>
+
+    <!-- Viền cứng, pixel-style (1-2px, không bo mềm) -->
+    <SolidColorBrush x:Key="BorderBrush" Color="#3A4048"/>
+
+    <!-- Chữ chính, độ tương phản cao trên nền tối -->
+    <SolidColorBrush x:Key="TextBrush" Color="#ECEFF3"/>
+
+    <!-- Chữ phụ / label / chú thích -->
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#9098A6"/>
+
+    <!-- Accent chính: vàng hổ phách ấm, tạo cảm giác premium/indie thay vì neon RGB gamer -->
+    <SolidColorBrush x:Key="AccentBrush" Color="#E8B34A"/>
+
+    <!-- Accent khi hover: sáng hơn accent gốc -->
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#F2C368"/>
+
+    <!-- Accent khi nhấn: tối hơn accent gốc -->
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#C99433"/>
+
+    <!-- STEP: màu bóng đổ cho DropShadowEffect của FilterEditorPanel (mục 1 audit) - đen
+         thuần, giống nhau ở cả 3 theme vì đây là bóng đổ vật lý, không phải màu trang trí
+         phụ thuộc theme. -->
+    <Color x:Key="ShadowColor">#000000</Color>
+
+    <!-- Track/thumb slider EQ -->
+    <SolidColorBrush x:Key="SliderBrush" Color="#E8B34A"/>
+
+    <!-- Đường cong EQ - tách biệt khỏi AccentBrush (dùng cho button/selection) để đường cong
+         luôn nổi bật rõ ràng trên graph mà không trộn lẫn ý nghĩa với các control tương tác -->
+    <SolidColorBrush x:Key="EQCurveBrush" Color="#57C6C2"/>
+
+    <!-- Cảnh báo (âm lượng lớn, lỗi...) -->
+    <SolidColorBrush x:Key="WarningBrush" Color="#E0674B"/>
+
+    <!-- ===== Brush phụ (bổ sung khi cần, vẫn đi qua Color Foundation này) ===== -->
+
+    <!-- Nền cho vùng waveform/spectrum, tối hơn PanelBrush một chút để tạo chiều sâu -->
+    <SolidColorBrush x:Key="PanelDeepBrush" Color="#171A20"/>
+
+    <!-- Viền nổi bật khi 1 item đang được chọn (band, preset...) -->
+    <SolidColorBrush x:Key="SelectedBorderBrush" Color="#E8B34A"/>
+
+    <!-- Overlay mờ phía sau popup/dialog -->
+    <SolidColorBrush x:Key="ScrimBrush" Color="#000000" Opacity="0.55"/>
+
+    <!--
+        ===== STEP 7 — Alias sang tên resource cũ (DarkTheme/PinkTheme) =====
+        MainWindow.xaml / PromptDialog.xaml hiện dùng các key "cũ" (BgPrimary, BgCard,
+        AccentColor...) vì được viết cùng lúc với DarkTheme.xaml. Để STEP 10 có thể đổi theme
+        lúc runtime chỉ bằng cách thay MergedDictionaries (không phải sửa lại từng control
+        trong XAML để trỏ sang tên key mới), PixelTheme khai báo alias trỏ lại đúng các brush
+        đã định nghĩa ở trên — KHÔNG tạo màu mới, chỉ tham chiếu lại.
+        Việc thêm alias ở đây không vi phạm quy tắc "chỉ định nghĩa màu ở STEP 5" vì bản thân
+        các alias không phải màu mới, chỉ là tên gọi thứ hai của cùng một brush.
+    -->
+    <StaticResource x:Key="BgPrimary" ResourceKey="BackgroundBrush"/>
+    <StaticResource x:Key="BgCard" ResourceKey="PanelBrush"/>
+    <StaticResource x:Key="BgElevated" ResourceKey="PanelSecondaryBrush"/>
+    <StaticResource x:Key="AccentColor" ResourceKey="AccentBrush"/>
+    <StaticResource x:Key="AccentColorDim" ResourceKey="AccentPressedBrush"/>
+    <StaticResource x:Key="TextPrimary" ResourceKey="TextBrush"/>
+    <StaticResource x:Key="TextSecondary" ResourceKey="TextSecondaryBrush"/>
+    <StaticResource x:Key="BorderColor" ResourceKey="BorderBrush"/>
+    <StaticResource x:Key="WarningColor" ResourceKey="WarningBrush"/>
+
+</ResourceDictionary>

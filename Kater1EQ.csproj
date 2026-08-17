@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <AssemblyName>Kater1EQ</AssemblyName>
+    <RootNamespace>Kater1EQ</RootNamespace>
+
+    <!-- Tối ưu để build nhẹ nhất khi publish -->
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\app.ico" />
+    <!-- Dùng wildcard để mọi ảnh trong Assets/Images/ đều tự động được nhúng làm Resource -->
+    <Resource Include="Assets\Images\**\*.png" />
+    <!-- BUG FIX: trước đây KHÔNG có dòng này - nghĩa là dù bỏ file .ttf vào Assets/Fonts/,
+         MSBuild vẫn không đóng gói nó vào build, nên font pixel/Minecraft không bao giờ áp
+         dụng được dù đặt đúng chỗ. Dùng wildcard để bất kỳ .ttf nào thả vào thư mục này đều
+         tự động được nhúng làm Resource, không cần sửa lại .csproj mỗi khi đổi file font. -->
+    <Resource Include="Assets\Fonts\**\*.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Dùng để bắt (loopback) âm thanh đang phát ra loa mặc định, vẽ sóng nhạc real-time -->
+    <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,43 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        ===== PixelFonts (STEP 6) =====
+        Nguồn FontFamily DUY NHẤT cho theme Pixel. Mọi control phải reference qua
+        {DynamicResource ...Font}, không hard-code FontFamily="..." rải rác trong XAML.
+
+        Font pixel thật (vd "Press Start 2P") cần được đặt tại:
+            Assets/Fonts/
+        (xem Assets/Fonts/README.md)
+
+        Cú pháp "./Assets/Fonts/#<Family Name>, <fallback 1>, <fallback 2>" cho phép WPF
+        tự động dùng font fallback nếu chưa có file font thật trong thư mục trên - app sẽ
+        KHÔNG crash vì thiếu font, chỉ hiển thị bằng fallback cho tới khi file .ttf được thêm.
+
+        BUG FIX: dùng pack URI TUYỆT ĐỐI (pack://application:,,,/...) thay vì đường dẫn tương
+        đối "./Assets/Fonts/..." - vì file này nằm trong Themes/, đường dẫn tương đối sẽ bị WPF
+        tính SAI thành Themes/Assets/Fonts/... (không tồn tại) thay vì Assets/Fonts/ ở gốc
+        project. Lỗi này từng khiến font Pixel/Pink không bao giờ áp dụng được dù file .ttf đã
+        đặt đúng chỗ và .csproj đã đăng ký Resource đúng.
+
+        TitleFont/HeaderFont/ButtonFont dùng font pixel đậm chất indie-game cho tiêu đề/nút.
+        NumbersFont ưu tiên fallback monospace để số liệu (dB, Hz, Q...) luôn thẳng hàng, dễ đọc.
+        BodyFont/SmallFont ưu tiên fallback dễ đọc ở kích thước nhỏ hơn là giữ đúng 100% pixel
+        font (pixel font kiểu "Press Start 2P" rất khó đọc ở size nhỏ).
+    -->
+
+    <FontFamily x:Key="TitleFont">pack://application:,,,/Assets/Fonts/#Press Start 2P, Consolas, Segoe UI</FontFamily>
+
+    <FontFamily x:Key="HeaderFont">pack://application:,,,/Assets/Fonts/#Press Start 2P, Consolas, Segoe UI</FontFamily>
+
+    <FontFamily x:Key="ButtonFont">pack://application:,,,/Assets/Fonts/#Press Start 2P, Consolas, Segoe UI</FontFamily>
+
+    <!-- Body/Small ưu tiên đọc được ở size nhỏ hơn là giữ 100% pixel font -->
+    <FontFamily x:Key="BodyFont">Consolas, Segoe UI</FontFamily>
+
+    <FontFamily x:Key="SmallFont">Consolas, Segoe UI</FontFamily>
+
+    <!-- Số liệu (dB / Hz / Q) - monospace để các cột số luôn thẳng hàng -->
+    <FontFamily x:Key="NumbersFont">Consolas, Lucida Console, Segoe UI</FontFamily>
+
+</ResourceDictionary>

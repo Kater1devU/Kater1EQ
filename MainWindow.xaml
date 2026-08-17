@@ -1,0 +1,565 @@
+<Window x:Class="Kater1EQ.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kater1EQ" Height="700" Width="700"
+        Icon="/Assets/Images/app_icon.png"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource BgPrimary}"
+        FontFamily="{DynamicResource AppFont}"
+        ResizeMode="NoResize"
+        Topmost="True">
+
+    <Window.Triggers>
+        <EventTrigger RoutedEvent="Window.Loaded">
+            <BeginStoryboard>
+                <Storyboard>
+                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                     From="0" To="1" Duration="0:0:0.35"/>
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+    </Window.Triggers>
+
+    <!--
+        STEP 7/10: các Style trước đây khai báo cục bộ ở đây (HeaderIconButton, DbAxisLabel,
+        FreqTickLabel, NavTabButton, FilterEditorLabel, FilterEditorValue, FilterEditorTextBox)
+        đã được chuyển sang Themes/PixelStyles.xaml (và có bản tương đương sẵn trong
+        DarkTheme.xaml/PinkTheme.xaml cho HeaderIconButton/NavTabButton) để mọi Style thật sự đi
+        qua theme dictionary đang active, thay vì bị Window.Resources cục bộ che mất khi đổi
+        theme lúc runtime. Không khai báo Window.Resources ở đây nữa để tránh duplicate style.
+    -->
+
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- 0: Header -->
+            <RowDefinition Height="*"/>
+            <!-- 1: Curve + waveform card -->
+            <RowDefinition Height="Auto"/>
+            <!-- 2: Warning -->
+            <RowDefinition Height="Auto"/>
+            <!-- 3: Action bar (đổi theo tab) -->
+            <RowDefinition Height="Auto"/>
+            <!-- 4: Bottom nav -->
+        </Grid.RowDefinitions>
+
+        <!-- STEP: ảnh nền tự vẽ của Kat (Assets/Images/AppBackground.png), phủ toàn bộ cửa sổ
+             phía sau mọi thứ, giống backgroundImage/background-size:cover trong Figma. Đặt là
+             con ĐẦU TIÊN của Grid để nằm dưới cùng (Grid vẽ theo thứ tự khai báo). Stretch=
+             UniformToFill để crop-fill giống "cover" của CSS thay vì bóp méo ảnh. -->
+        <Image Grid.Row="0" Grid.RowSpan="5" Stretch="UniformToFill"
+               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+               Source="/Assets/Images/AppBackground.png"/>
+
+        <!-- ===== HEADER ===== -->
+        <!-- STEP 7: bỏ LinearGradientBrush cũ (gradient mềm không hợp tinh thần pixel) - dùng
+             nền phẳng BgCard, đồng bộ với BorderColor phía dưới cho rõ ranh giới header. -->
+        <!-- STEP: mục 1 audit - Background="#00FFFFFF" (alpha 00, trong suốt hoàn toàn) là CỐ
+             Ý, không phải hard-code cần sửa: header phải để lộ AppBackground.png phía sau, chỉ
+             cần Border để vẽ BorderBrush (đường viền dưới) ăn theo theme. Xác nhận giữ nguyên. -->
+        <Border Grid.Row="0" Padding="24,18" Background="#00FFFFFF"
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Source="pack://application:,,,/Kater1EQ;component/Assets/Images/avatar.png"
+                           Width="65" Height="61" Stretch="UniformToFill" Margin="0,0,12,0" />
+
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="KATER1 Equalizer" FontSize="15" FontWeight="Bold" FontStyle="Italic"
+                                       FontFamily="{DynamicResource AppFont}"
+                                       Foreground="{DynamicResource TextOnDark}"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Preset: " FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                            <TextBlock x:Name="PresetSubtitleText" Text="None" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- STEP: ResizeMode="NoResize" của Window sẽ tự động ẩn/disable nút minimize
+                         mặc định trên title bar của Windows, nên phải tự vẽ nút thu nhỏ ở đây và
+                         gọi WindowState = Minimized bằng tay (xem MinimizeButton_Click). -->
+                    <Button x:Name="MinimizeButton" Style="{DynamicResource HeaderIconButton}" Margin="0,0,8,0"
+                            Click="MinimizeButton_Click" ToolTip="Thu nhỏ xuống taskbar">
+                        <Viewbox Width="15" Height="15">
+                            <Canvas Width="24" Height="24">
+                                <Rectangle Canvas.Left="4" Canvas.Top="11" Width="16" Height="2.5" RadiusX="1.25" RadiusY="1.25"
+                                           Fill="{DynamicResource TextPrimary}"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+                    <Button x:Name="CompactViewButton" Style="{DynamicResource HeaderIconButton}" Margin="0,0,8,0"
+                            Click="CompactViewButton_Click" ToolTip="Ẩn/hiện thang dB">
+                        <Viewbox Width="15" Height="15">
+                            <Canvas Width="24" Height="24">
+                                <Rectangle Canvas.Left="3" Canvas.Top="3" Width="8" Height="8" RadiusX="1.5" RadiusY="1.5" Fill="{DynamicResource TextPrimary}"/>
+                                <Rectangle Canvas.Left="13" Canvas.Top="3" Width="8" Height="8" RadiusX="1.5" RadiusY="1.5" Fill="{DynamicResource TextPrimary}" Opacity="0.55"/>
+                                <Rectangle Canvas.Left="3" Canvas.Top="13" Width="8" Height="8" RadiusX="1.5" RadiusY="1.5" Fill="{DynamicResource TextPrimary}" Opacity="0.55"/>
+                                <Rectangle Canvas.Left="13" Canvas.Top="13" Width="8" Height="8" RadiusX="1.5" RadiusY="1.5" Fill="{DynamicResource TextPrimary}" Opacity="0.55"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+                    <Button x:Name="ToggleWaveformButton" Style="{DynamicResource HeaderIconButton}"
+                            Click="ToggleWaveformButton_Click" ToolTip="Bật/tắt sóng nhạc real-time">
+                        <Viewbox Width="16" Height="16">
+                            <Canvas Width="24" Height="24">
+                                <Polyline Points="1,12 6,12 9,4 13,20 16,8 19,15 23,12"
+                                          Stroke="{DynamicResource AccentColor}" StrokeThickness="2"
+                                          StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== CURVE + WAVEFORM CARD ===== -->
+        <Grid x:Name="EqMainContentGrid" Grid.Row="1" Margin="24,16,24,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="64"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Master volume -->
+            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                <TextBlock x:Name="MasterVolumeText" Text="+0.0" HorizontalAlignment="Center"
+                           FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentColor}"
+                           Margin="0,0,0,8"/>
+                <Slider x:Name="MasterVolumeSlider" Style="{DynamicResource EqVerticalSlider}"
+                        Minimum="-24" Maximum="24" Value="0" Height="280"
+                        ValueChanged="MasterVolumeSlider_ValueChanged"/>
+                <TextBlock Text="VOL" HorizontalAlignment="Center" FontSize="10" Margin="0,10,0,0"
+                           Foreground="{DynamicResource TextSecondary}"/>
+            </StackPanel>
+
+            <!-- Card -->
+            <!-- STEP: Figma gốc để card này TRONG SUỐT (background: rgba(0,0,0,0), border: none)
+                 để lộ ảnh nền phía sau qua vùng EQ - không phải card đặc màu như trước. Header
+                 và bottom nav vẫn đặc màu BgCard để giữ độ tương phản đọc chữ, chỉ vùng EQ card
+                 chính giữa này là trong suốt theo đúng thiết kế. -->
+            <Border Grid.Column="1" Background="Transparent"
+                    BorderBrush="Transparent" BorderThickness="0"
+                    CornerRadius="0" ClipToBounds="True">
+                <Grid Margin="14,14,14,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- group labels -->
+                        <RowDefinition Height="*"/>
+                        <!-- curve -->
+                        <RowDefinition x:Name="WaveformRowDef" Height="130"/>
+                        <!-- waveform -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- freq ticks -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Group labels -->
+                    <UniformGrid x:Name="GroupLabelsRow" Grid.Row="0" Columns="4" Margin="34,0,0,6">
+                        <TextBlock Text="BASS" HorizontalAlignment="Center" FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="MIDS" HorizontalAlignment="Center" FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="TREBLE" HorizontalAlignment="Center" FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="AIR" HorizontalAlignment="Center" FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}"/>
+                    </UniformGrid>
+
+                    <!-- Curve -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid x:Name="DbAxisPanel" Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="+50" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="1" Text="+40" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="2" Text="+30" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="3" Text="+20" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="4" Text="+10" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="5" Text="0" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="6" Text="-10" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="7" Text="-20" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="8" Text="-30" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="9" Text="-40" Style="{DynamicResource DbAxisLabel}"/>
+                            <TextBlock Grid.Row="10" Text="-50" Style="{DynamicResource DbAxisLabel}"/>
+                        </Grid>
+
+                        <Grid Grid.Column="1">
+                            <Rectangle Height="1" Fill="Transparent" VerticalAlignment="Center"
+                                       Stroke="{DynamicResource TextSecondary}" StrokeDashArray="4 3" Opacity="0.5"/>
+                            <Canvas x:Name="CurveCanvas" ClipToBounds="True" SizeChanged="CurveCanvas_SizeChanged"/>
+                        </Grid>
+                    </Grid>
+
+                    <!-- Waveform -->
+                    <!-- STEP: Figma gốc để panel này transparent/border:none (đúng tinh thần
+                         "nghệ thuật lộ ra phía sau" xuyên suốt vùng EQ) - bỏ nền đặc BgElevated
+                         và viền, để ảnh nền của Kat hiện qua vùng waveform luôn. -->
+                    <Border x:Name="WaveformBorder" Grid.Row="2" Background="Transparent"
+                            BorderBrush="Transparent" BorderThickness="0"
+                            CornerRadius="0" Margin="34,10,0,0">
+                        <Canvas x:Name="WaveformCanvas" ClipToBounds="True" SizeChanged="WaveformCanvas_SizeChanged"/>
+                    </Border>
+
+                    <!-- Frequency ticks -->
+                    <UniformGrid Grid.Row="3" Columns="13" Margin="34,6,0,10">
+                        <TextBlock Text="5" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="10" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="20" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="40" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="80" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="160" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="320" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="640" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="1.3k" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="2.6k" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="5.1k" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="10k" Style="{DynamicResource FreqTickLabel}"/>
+                        <TextBlock Text="20k" Style="{DynamicResource FreqTickLabel}"/>
+                    </UniformGrid>
+                </Grid>
+            </Border>
+
+            <!-- ===== FILTER EDITOR (overlay, hiện khi có band đang được chọn trên đồ thị) ===== -->
+            <Border x:Name="FilterEditorPanel" Grid.Column="1" Width="230" MaxWidth="230"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,14,14,0"
+                    Background="{DynamicResource BgElevated}" BorderBrush="{DynamicResource BorderColor}"
+                    BorderThickness="2" CornerRadius="0" Padding="14" Visibility="Collapsed"
+                    RenderTransformOrigin="0.5,0.5">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="FilterEditorPanelTransform" Y="0"/>
+                </Border.RenderTransform>
+                <!-- STEP 7: giảm mạnh DropShadowEffect cũ (BlurRadius 18) - pixel style tránh
+                     bóng đổ mềm; giữ shadow rất nhẹ để panel vẫn tách khỏi nền phía sau. -->
+                <!-- STEP: mục 1 audit - đổi hard-code Color="#000000" sang DynamicResource
+                     ShadowColor (khai báo giống nhau ở cả 3 theme). Đây là bóng đổ vật lý mô
+                     phỏng panel nổi khỏi nền, không phải màu UI trang trí, nên cố ý giống nhau
+                     ở mọi theme - xác nhận, không phải bỏ sót. -->
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="4" ShadowDepth="2" Opacity="0.3" Color="{DynamicResource ShadowColor}"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock Text="FILTER EDITOR" FontSize="12" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                        <Button Content="&#10005;" HorizontalAlignment="Right" Width="20" Height="20"
+                                Background="Transparent" Foreground="{DynamicResource TextSecondary}"
+                                BorderThickness="0" Cursor="Hand" Click="CloseFilterEditor_Click"/>
+                    </Grid>
+
+                    <TextBlock Text="BAND" Style="{DynamicResource FilterEditorLabel}"/>
+                    <TextBlock x:Name="FilterEditorBandLabel" Text="01" Style="{DynamicResource FilterEditorValue}"/>
+
+                    <TextBlock Text="TYPE" Style="{DynamicResource FilterEditorLabel}" Margin="0,8,0,0"/>
+                    <ComboBox x:Name="FilterEditorTypeCombo" Height="30" SelectionChanged="FilterEditorTypeCombo_SelectionChanged"/>
+
+                    <TextBlock Text="FREQUENCY (Hz)" Style="{DynamicResource FilterEditorLabel}" Margin="0,8,0,0"/>
+                    <TextBox x:Name="FilterEditorFreqBox" Style="{DynamicResource FilterEditorTextBox}"
+                             LostFocus="FilterEditorFreqBox_LostFocus" KeyDown="FilterEditorFreqBox_KeyDown"/>
+
+                    <TextBlock Text="GAIN (dB)" Style="{DynamicResource FilterEditorLabel}" Margin="0,8,0,0"/>
+                    <TextBox x:Name="FilterEditorGainBox" Style="{DynamicResource FilterEditorTextBox}"
+                             LostFocus="FilterEditorGainBox_LostFocus" KeyDown="FilterEditorGainBox_KeyDown"/>
+
+                    <TextBlock Text="Q" Style="{DynamicResource FilterEditorLabel}" Margin="0,8,0,0"/>
+                    <TextBox x:Name="FilterEditorQBox" Style="{DynamicResource FilterEditorTextBox}"
+                             LostFocus="FilterEditorQBox_LostFocus" KeyDown="FilterEditorQBox_KeyDown"/>
+
+                    <StackPanel x:Name="FilterEditorSlopeRow" Margin="0,8,0,0">
+                        <TextBlock Text="SLOPE" Style="{DynamicResource FilterEditorLabel}"/>
+                        <ComboBox x:Name="FilterEditorSlopeCombo" Height="30" SelectionChanged="FilterEditorSlopeCombo_SelectionChanged"/>
+                    </StackPanel>
+
+                    <CheckBox x:Name="FilterEditorEnabledCheck" Content="Band bật (Enabled)" Margin="0,12,0,0"
+                              Foreground="{DynamicResource TextSecondary}" FontSize="11"
+                              Checked="FilterEditorEnabledCheck_Changed" Unchecked="FilterEditorEnabledCheck_Changed"/>
+
+                    <Button Content="RESET BAND" Style="{DynamicResource SecondaryButton}" Height="32"
+                            Margin="0,12,0,0" Click="ResetBand_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ===== SOCIAL PANEL (thay cho tab Rules cũ) ===== -->
+        <!-- Link CỐ ĐỊNH của tác giả app (xem Services/DeveloperSocialLinks.cs) - không cho
+             người dùng chỉnh sửa, chỉ để xem & bấm mở. -->
+        <!-- STEP 12: RenderTransformOrigin/RenderTransform + Opacity dùng cho fade/slide animation
+             khi mở/đóng panel (AnimatePanelVisibility trong code-behind). KHÔNG ảnh hưởng audio
+             thread / waveform rendering - chỉ là UI transform thuần. -->
+        <Border x:Name="SocialPanel" Grid.Row="1" Margin="24,16,24,10"
+                Background="Transparent" BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="1" CornerRadius="12" Visibility="Collapsed"
+                RenderTransformOrigin="0.5,0.5">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="SocialPanelTransform" Y="0"/>
+            </Border.RenderTransform>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18">
+                <StackPanel>
+                    <TextBlock Text="SOCIAL" FontSize="13" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
+                    <TextBlock Text="Kater1EQ được phát triển bởi Kater1dev. Bấm vào 1 dòng để mở link."
+                               FontSize="11" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"
+                               Margin="0,0,0,16"/>
+
+                    <!-- Facebook -->
+                    <Border x:Name="FacebookRow" Cursor="Hand" Background="Transparent" Margin="0,0,0,10"
+                            MouseLeftButtonUp="DeveloperSocialLink_Click" Tag="Facebook">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="34"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="26" Height="26" CornerRadius="13"
+                                    Background="{DynamicResource AccentColorDim}">
+                                <Viewbox Width="13" Height="13">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Fill="{DynamicResource TextPrimary}"
+                                              Data="M15,4 L13,4 C10.8,4 9,5.8 9,8 L9,10 L7,10 L7,13 L9,13 L9,22 L12,22 L12,13 L14.6,13 L15,10 L12,10 L12,8 C12,7.4 12.4,7 13,7 L15,7 Z"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <TextBlock Grid.Column="1" x:Name="FacebookLinkText" VerticalAlignment="Center"
+                                       Margin="10,0,0,0" FontSize="12" Foreground="{DynamicResource TextPrimary}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Instagram -->
+                    <Border x:Name="InstagramRow" Cursor="Hand" Background="Transparent" Margin="0,0,0,10"
+                            MouseLeftButtonUp="DeveloperSocialLink_Click" Tag="Instagram">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="34"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="26" Height="26" CornerRadius="13"
+                                    Background="{DynamicResource AccentColorDim}">
+                                <Viewbox Width="13" Height="13">
+                                    <Canvas Width="24" Height="24">
+                                        <Rectangle Canvas.Left="3" Canvas.Top="3" Width="18" Height="18"
+                                                   RadiusX="6" RadiusY="6" Stroke="{DynamicResource TextPrimary}"
+                                                   StrokeThickness="1.8"/>
+                                        <Ellipse Canvas.Left="8" Canvas.Top="8" Width="8" Height="8"
+                                                 Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.8"/>
+                                        <Ellipse Canvas.Left="16" Canvas.Top="5" Width="2" Height="2"
+                                                 Fill="{DynamicResource TextPrimary}"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <TextBlock Grid.Column="1" x:Name="InstagramLinkText" VerticalAlignment="Center"
+                                       Margin="10,0,0,0" FontSize="12" Foreground="{DynamicResource TextPrimary}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- GitHub -->
+                    <Border x:Name="GitHubRow" Cursor="Hand" Background="Transparent" Margin="0,0,0,10"
+                            MouseLeftButtonUp="DeveloperSocialLink_Click" Tag="GitHub">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="34"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="26" Height="26" CornerRadius="13"
+                                    Background="{DynamicResource AccentColorDim}">
+                                <Viewbox Width="14" Height="14">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Fill="{DynamicResource TextPrimary}"
+                                              Data="M12 .297C5.373 .297 0 5.67 0 12.297c0 5.302 3.438 9.8 8.207 11.387.6.112.82-.26.82-.577 0-.285-.01-1.04-.016-2.04-3.338.725-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.757-1.333-1.757-1.09-.745.083-.73.083-.73 1.205.085 1.84 1.238 1.84 1.238 1.07 1.835 2.807 1.305 3.492.998.108-.775.418-1.305.76-1.605-2.665-.305-5.466-1.335-5.466-5.933 0-1.31.468-2.382 1.236-3.222-.124-.303-.536-1.523.117-3.176 0 0 1.008-.322 3.3 1.23.958-.266 1.984-.399 3.005-.404 1.02.005 2.047.138 3.006.404 2.29-1.552 3.297-1.23 3.297-1.23.655 1.653.243 2.873.12 3.176.77.84 1.235 1.912 1.235 3.222 0 4.61-2.807 5.625-5.48 5.922.43.372.815 1.104.815 2.227 0 1.606-.015 2.896-.015 3.293 0 .32.216.695.825.576C20.565 22.092 24 17.597 24 12.297 24 5.67 18.627 .297 12 .297z"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <TextBlock Grid.Column="1" x:Name="GitHubLinkText" VerticalAlignment="Center"
+                                       Margin="10,0,0,0" FontSize="12" Foreground="{DynamicResource TextPrimary}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- TikTok -->
+                    <Border x:Name="TikTokRow" Cursor="Hand" Background="Transparent" Margin="0,0,0,10"
+                            MouseLeftButtonUp="DeveloperSocialLink_Click" Tag="TikTok">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="34"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="26" Height="26" CornerRadius="13"
+                                    Background="{DynamicResource AccentColorDim}">
+                                <Viewbox Width="13" Height="13">
+                                    <Canvas Width="24" Height="24">
+                                        <!-- Simple TikTok-style musical note icon (monochrome) -->
+                                        <Path Fill="{DynamicResource TextPrimary}"
+                                              Data="M12,2 L12,12 C12,15.866 8.866,19 5,19 C2.238,19 0,16.762 0,14 C0,11.238 2.238,9 5,9 C5.805,9 6.565,9.18 7.245,9.5 L7.245,5 L12,5 Z"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <TextBlock Grid.Column="1" x:Name="TikTokLinkText" VerticalAlignment="Center"
+                                       Margin="10,0,0,0" FontSize="12" Foreground="{DynamicResource TextPrimary}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Steam -->
+                    <Border x:Name="SteamRow" Cursor="Hand" Background="Transparent" Margin="0,0,0,4"
+                            MouseLeftButtonUp="DeveloperSocialLink_Click" Tag="Steam">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="34"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="26" Height="26" CornerRadius="13"
+                                    Background="{DynamicResource AccentColorDim}">
+                                <Viewbox Width="14" Height="14">
+                                    <Canvas Width="24" Height="24">
+                                        <!-- Steam-style icon: two connected circles and arm (monochrome) -->
+                                        <Path Fill="{DynamicResource TextPrimary}"
+                                              Data="M19,9.5 C21.485,9.5 23.5,11.515 23.5,14 C23.5,16.485 21.485,18.5 19,18.5 C17.63,18.5 16.4,17.86 15.6,16.86 L10.2,14.86 C9.8,15.9 8.7,16.66 7.4,16.66 C5.07,16.66 3.2,14.79 3.2,12.46 C3.2,10.13 5.07,8.26 7.4,8.26 C8.73,8.26 9.95,8.86 10.77,9.86 L15.17,11.86 C16.02,10.9 17.43,9.5 19,9.5 Z"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <TextBlock Grid.Column="1" x:Name="SteamLinkText" VerticalAlignment="Center"
+                                       Margin="10,0,0,0" FontSize="12" Foreground="{DynamicResource TextPrimary}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+
+        <!-- ===== WARNING ===== -->
+        <StackPanel x:Name="WarningPanel" Grid.Row="2" Orientation="Horizontal" Margin="28,0,28,10" HorizontalAlignment="Center">
+            <TextBlock Text="&#9888;" FontSize="12" Foreground="{DynamicResource WarningColor}" Margin="0,0,6,0"/>
+            <TextBlock Text="Âm lượng lớn có thể ảnh hưởng thính giác, hãy nghe ở mức vừa đủ."
+                       FontSize="11.5" Foreground="{DynamicResource TextSecondary}"/>
+        </StackPanel>
+
+        <!-- ===== ACTION BAR (đổi theo tab EQ / Presets) ===== -->
+        <Grid Grid.Row="3" Margin="24,0,24,14">
+            <!-- Tab EQ -->
+            <Grid x:Name="EqActionsPanel">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="EqToggleButton" Grid.Column="0" Click="EqToggleButton_Click"
+                        Style="{DynamicResource PrimaryButton}" Margin="0,0,10,0" Height="46"
+                        Background="{DynamicResource BgCard}" Foreground="{DynamicResource TextOnDark}">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="&#9211;" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="EqToggleText" Text="Stop EQ" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock Text=" · " VerticalAlignment="Center" Opacity="0.7"/>
+                        <TextBlock x:Name="SourceNameText" Text="không có nguồn phát" VerticalAlignment="Center" Opacity="0.85" FontSize="11.5"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="1" Content="&#8635; Reset" Style="{DynamicResource SecondaryButton}"
+                        Click="ResetFlat_Click" Height="46" Padding="16,0"
+                        Background="{DynamicResource BgCard}" Foreground="{DynamicResource TextOnDark}"/>
+            </Grid>
+
+            <!-- Tab Presets (STEP 9: ListBox thay cho PresetComboBox cũ) -->
+            <StackPanel x:Name="PresetsActionsPanel" Visibility="Collapsed">
+                <UniformGrid Columns="3" Rows="1" Margin="0,0,0,8">
+                    <Button x:Name="OverwritePresetButton" Content="Ghi đè" Style="{DynamicResource SecondaryButton}"
+                            Margin="0,0,8,0" Height="34"
+                            Click="OverwritePreset_Click" ToolTip="Lưu trạng thái EQ hiện tại đè lên preset đang chọn"/>
+                    <Button x:Name="RenamePresetButton" Content="Đổi tên" Style="{DynamicResource SecondaryButton}"
+                            Margin="0,0,8,0" Height="34"
+                            Click="RenamePreset_Click"/>
+                    <Button x:Name="DeletePresetButton" Content="Xoá" Style="{DynamicResource SecondaryButton}"
+                            Height="34"
+                            Click="DeletePreset_Click"/>
+                </UniformGrid>
+
+                <ListBox x:Name="PresetListBox" MaxHeight="220"
+                         Background="Transparent" BorderThickness="0"
+                         ItemContainerStyle="{DynamicResource PresetListBoxItem}"
+                         SelectionChanged="PresetListBox_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="★" Margin="0,0,8,0" FontSize="12"
+                                           Foreground="{DynamicResource AccentColor}"
+                                           Visibility="{Binding StarVisibility}"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12.5"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Nút chính, nổi bật: tạo preset mới từ trạng thái EQ hiện tại -->
+                <Button x:Name="AddPresetButton" Content="+ THÊM PRESET"
+                        Style="{DynamicResource PrimaryButton}" Height="38" Padding="14,0"
+                        Margin="0,8,0,0"
+                        Click="AddPreset_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== BOTTOM NAV ===== -->
+        <!-- STEP: mục 1 audit - cùng lý do với header: Background="#00FFFFFF" cố ý trong suốt
+             để lộ AppBackground.png, chỉ dùng BorderBrush để vẽ đường viền trên. Xác nhận giữ
+             nguyên. -->
+        <Border Grid.Row="4" Background="#00FFFFFF"
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0" Padding="0,8">
+            <UniformGrid Columns="5">
+                <Button x:Name="NavEqButton" Style="{DynamicResource NavTabButton}" Click="NavEq_Click">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="&#9211;" FontSize="16" HorizontalAlignment="Center"/>
+                        <TextBlock Text="EQ" FontSize="10.5" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavPresetsButton" Style="{DynamicResource NavTabButton}" Click="NavPresets_Click">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="&#9776;" FontSize="16" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Presets" FontSize="10.5" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavSocialButton" Style="{DynamicResource NavTabButton}" Click="NavSocial_Click">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="&#9636;" FontSize="16" HorizontalAlignment="Center"/>
+                        <TextBlock Text="SOCIAL" FontSize="10.5" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavTabsButton" Style="{DynamicResource NavTabButton}" Click="NavComingSoon_Click">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="&#9635;" FontSize="16" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Tabs" FontSize="10.5" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavMoreButton" Style="{DynamicResource NavTabButton}" Click="NavComingSoon_Click">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="&#8943;" FontSize="16" HorizontalAlignment="Center"/>
+                        <TextBlock Text="More" FontSize="10.5" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Button>
+            </UniformGrid>
+        </Border>
+    </Grid>
+</Window>
