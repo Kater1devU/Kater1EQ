@@ -1,7 +1,7 @@
 # Kater1EQ
 
 <p align="center">
-  <img src="Assets/Images/avatar.png" width="96" alt="Kater1EQ Icon">
+  <img src="Assets/Images/avatar.png?v=1" width="96" alt="Kater1EQ Icon">
 </p>
 
 <h3 align="center">Kater1EQ</h3>
